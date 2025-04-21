@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+    <meta name="theme-color" content="green">
+    <meta name="description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="author" content="Salimdotpy">
+    <meta name="keywords" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="robots" content="all">
+    <meta property="og:title" content="Smart Wastebin">
+    <meta property="og:description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta property="og:image" content="https://lorawastebin.pythonanywhere.com/static/2022-04-24-6264bf928d116.png">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="600">
+    <meta property="og:image:alt" content="logo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Smart Wastebin">
+    <meta name="twitter:description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="twitter:image" content="https://lorawastebin.pythonanywhere.com/static/2022-04-24-6264bf928d116.png">
+    <meta name="twitter:image:width" content="800">
+    <meta name="twitter:image:height" content="600">
+    <meta name="twitter:image:alt" content="logo">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='2022-04-24-6264bf928d116.png') }}"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" integrity="sha512-XJ3ntWHl40opEiE+6dGhfK9NAKOCELrpjiBRQKtu6uJf9Pli8XY+Hikp7rlFzY4ElLSFtzjx9GGgHql7PLSeog==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <title>Waste-bin Map</title>
+    <style>
+        main {
+            padding: 0;
+            margin: 0;
+        }
+
+        a .fa:before {
+            font-size: large;
+        }
+        /*For map elements*/
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .map-wrapper {
+            height: calc(100vh - 64px);
+            /*padding: 64px 0 0 0;*/
+        }
+
+        .map-wrapper #map{
+            height: 100%;
+        }
+
+        #result {
+            position: absolute;
+            background: rgba(255, 255, 255, .8);
+            top: 64px;
+            left: 0;
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px;
+            border-radius: 10px;
+        }
+
+        .map-keys {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            right: 10px;
+            top: 240px;
+            padding: 10px 0;
+            z-index: 5;
+        }
+
+        .map-keys a {
+            display: flex;
+            margin: 0 0 5px 0;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            border: solid 1px #f2f5f5;
+            border-radius: 5px;
+            box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+            background: #fff;
+            user-select: none;
+        }
+
+        .map-keys a:active {
+            border: inset 1px #fff;
+            background: radial-gradient(#d6d6d6, #fff);
+        }
+        ::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f2f2f2;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0, .8);
+            border-radius: 20px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0, 1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+            padding: 0 18px;
+        }
+        nav a {
+            color: black;
+        }
+
+        .loading{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            z-index: 10000;
+            min-height: 100vh; width: 100%;
+            background: rgba(50,50,50,.7);
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="loading">
+        <span class="fa-stack fa-lg tada animated infinite" style="position: absolute" title="Loading...">
+            <i class="fa fa-circle fa-stack-2x text-primary"></i>
+            <i class="fa fa-lock fa-stack-1x fa-inverse"></i>
+        </span>
+        <i class="fa fa-spinner fa-pulse fa-4x white-text"></i>
+    </div>
+    <nav>
+        <a href="/waste-report"><i class='fa fa-arrow-left'></i></a>
+        <h3 class="app-name">Map Page</h3>
+        <a href="/waste-report" style="visibility:hidden"><i class='fa fa-arrow-left'></i></a>
+    </nav>
+    <main class="body-wrapper">
+        <div class="map-wrapper">
+            <div id='map'></div>
+            <input id='txt-marker-coord' type='text' value='' hidden>
+            <div class="map-keys">
+                <input type="hidden" id="loc" value="" />
+                <a onclick="changeMap();"><i class="fa fa-image"></i></a>
+                <a onclick="centerMap();"><i class="fa fa-arrows"></i></a>
+                <a onclick="document.location.reload();"><i class="fa fa-refresh"></i></a>
+            </div>
+        </div>
+        <div id="infoModal" class="modal fade">
+            <div class="modal-dialog" style="margin-top:20vh">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                        <h4 class="modal-title">Stop Tracking</h4>
+                    </div>
+                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto">
+
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src='/static/main.js'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true'></script>
+    <script>
+        let map; let tracker = 1;
+        let binMarkers = {};
+        let binInfo = {{binInfo|tojson}};
+        let m_center;
+        let mapType = ["hybrid", "roadmap", "satellite", "terrain", 0];
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: { lat: 7.7603, lng: 4.4615 },
+                mapTypeId: google.maps.MapTypeId.HYBRID
+            });
+        }
+        window.onload = initMap;
+
+        function changeMap() {
+            map.setMapTypeId(mapType[mapType[-1]]);
+            if (mapType[-1] < 3) mapType[-1] += 1;
+            else mapType[-1] = 0;
+        }
+
+        function centerMap() {
+            if (m_center)  map.setCenter(m_center);
+        }
+        $(document).ready(function(){
+            setTimeout(()=>{
+                AddToMap();
+            }, 5000);
+        });
+        function AddToMap() {
+            $.each(binInfo, function (i, data) {
+                let { id, binId, lon, lat, level, date } = data;
+                let icon = 'https://maps.google.com/mapfiles/ms/icons/';
+                if(level <= 50) icon += 'green-dot.png';
+                else if(level<= 74) icon += 'yellow-dot.png';
+                else icon += 'red-dot.png';
+                if (binMarkers[binId]) {
+                    // Update marker position
+                    binMarkers[binId].setPosition(new google.maps.LatLng(Number(lat), Number(lon)));
+                } else {
+                    // Create a new marker for the security personnel
+                    binMarkers[binId] = new google.maps.Marker({ position: { lat: Number(lat), lng: Number(lon) },
+                        map: map, title: `Wastebin with id: ${data.binId} and level: ${data.level}`,
+                        icon: icon
+                    });
+                }
+                if (i==0) {
+                    m_center = new google.maps.LatLng(Number(lat), Number(lon));
+                    map.setCenter(m_center);
+                } binMarkers[binId].addListener('click', function(event) {
+                    let diag = $('#infoModal');
+                    diag.find('form').hide();
+                    diag.find('.modal-footer').show();
+                    diag.find('.modal-title').text("Waste Bin Info:");
+                    diag.find('.modal-body').html(`
+                    <b>ID:</b> ${binId}<br/>
+                    <b>Level:</b> ${level}<br/>
+                    <b>Date:</b> ${date}<br/>
+                    `);
+                    diag.find('.modal-footer').html('<button class="btn btn-primary" data-dismiss="modal">OK</button>');
+                    diag.modal('show');
+                    m_center = new google.maps.LatLng(Number(lat), Number(lon));
+                    map.setCenter(m_center);
+                    event.preventDefault(); //e.stopPropagation();
+                });
+            })
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+    <meta name="theme-color" content="green">
+    <meta name="description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="author" content="Salimdotpy">
+    <meta name="keywords" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="robots" content="all">
+    <meta property="og:title" content="Smart Wastebin">
+    <meta property="og:description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta property="og:image" content="https://lorawastebin.pythonanywhere.com/static/2022-04-24-6264bf928d116.png">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="600">
+    <meta property="og:image:alt" content="logo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Smart Wastebin">
+    <meta name="twitter:description" content="LoRa-based Smart Waste Bin Level Notification System">
+    <meta name="twitter:image" content="https://lorawastebin.pythonanywhere.com/static/2022-04-24-6264bf928d116.png">
+    <meta name="twitter:image:width" content="800">
+    <meta name="twitter:image:height" content="600">
+    <meta name="twitter:image:alt" content="logo">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='2022-04-24-6264bf928d116.png') }}"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.css" integrity="sha512-XJ3ntWHl40opEiE+6dGhfK9NAKOCELrpjiBRQKtu6uJf9Pli8XY+Hikp7rlFzY4ElLSFtzjx9GGgHql7PLSeog==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <title>Waste-bin Notification</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body{
+            overflow-x: hidden !important;
+            width: 100%;
+            background: #f2f2f2;
+            margin: 0;
+        }
+        tr.bg-success{
+            background-color: #dff0d8!important;
+        }
+        tr.bg-warning{
+            background-color: #fcf8e3!important;
+        }
+        tr.bg-danger{
+            background-color: #f2dede!important;
+        }
+        .con {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            padding: 15px 0px;
+        }
+        .wrap {
+            background: #fff;
+            width: 90%;
+            border-radius: 15px;
+            padding: 15px 5px;
+            max-height: 90vh;
+            overflow: auto;
+        }
+        .head {
+            text-align: center;
+        }
+        .head h4{
+            margin: 0;
+            display: inline-block;
+        }
+        .head > img {
+            width: 50px;
+            height: 50px;
+        }
+        .body {
+            padding: 15px;
+        }
+        .filter-input{
+            border: 1px solid #aaa !important;
+            border-radius: 3px !important;
+            padding: 5px !important;
+            background-color: transparent !important;
+            margin-left: 3px !important;
+            width: auto !important;
+            height: auto !important;
+            margin: auto !important;
+            display: inline-block !important;
+        }
+        .loading{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            z-index: 10000;
+            min-height: 100vh; width: 100%;
+            background: rgba(50,50,50,.7);
+        }
+        .row {
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="loading">
+        <span class="fa-stack fa-lg tada animated infinite" style="position: absolute" title="Loading...">
+            <i class="fa fa-circle fa-stack-2x text-primary"></i>
+            <i class="fa fa-lock fa-stack-1x fa-inverse"></i>
+        </span>
+        <i class="fa fa-spinner fa-pulse fa-4x white-text"></i>
+    </div>
+    <div class="con">
+        <div class="wrap">
+            <div class="head">
+                <img src="{{ url_for('static', filename='2022-04-24-6264bf928d116.png') }}"/>
+                <h4>LoRa-based Smart Waste Bin Level Notification System</h4>
+            </div>
+        {% if binInfo %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            <a href="/" class="btn btn-danger btn-sm">&larr;</a>
+                            <a href="/waste-map" class="btn btn-info btn-sm pull-right">View all on map</a>
+                        </div>
+                        <div class="panel-body" style="padding-left:0; padding-right:0">
+                            <table id="reports" class="display" style="width:100%">
+                                <thead>
+                                <tr>
+                                    <th>S/N</th><th>BinID</th>
+                                    <th>Location</th><th>Level</th><th>Date</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bin in binInfo %}
+                                    <tr class="{%if bin.level|int <= 50 %}bg-success text-success{%elif bin.level|int <= 74 %}bg-warning text-warning{%else%}bg-danger text-danger{%endif%}">
+                                        <td>{{loop.index}}</td>
+                                        <td>{{ bin.binId }}</td>
+                                        <td>({{ bin.lon }}, {{ bin.lat }})<br/><a href="/waste-map?id={{bin.id}}" class="btn btn-sm btn-info">View on Map</a></td>
+                                        <td>{{ ((bin.level|int / 183) * 100)|round(2) }}%</td>
+                                        <td>{{ bin.date.strftime("%a, %d %b %Y at %I:%M:%S%p") }}</td>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="body text-center">
+                <div>
+                    <a href="/waste-report" class="btn btn-info">View Wastebin Report</a>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#reports').DataTable();
+            $('#reports_length select').addClass('filter-input');
+            $('#reports_filter input').addClass('filter-input');
+            $('#reports_wrapper').addClass('table-responsive');
+
+            var startY;
+            var threshold = 150; // Minimum distance to trigger refresh (in pixels)
+            $("body").on("touchstart", function (e) {
+                startY = e.originalEvent.touches[0].pageY;
+            });
+            $("body").on("touchmove", function (e) {
+                var distance = e.originalEvent.touches[0].pageY - startY;
+                if (distance > threshold) {
+                    $(".loading").show();
+                } else {
+                    $(".loading").fadeOut("slow");
+                }
+            });
+            $("body").on("touchend", function (e) {
+                var distance = e.originalEvent.changedTouches[0].pageY - startY;
+                if (distance > threshold) {
+                    // Perform your refresh action here
+                    location.reload(); // For example, reload the page
+                }
+                $(".loading").fadeOut("slow");
+            });
+        });
+    </script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+
+</html>
